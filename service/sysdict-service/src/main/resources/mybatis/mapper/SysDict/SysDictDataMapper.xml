@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.movie.sysdict.mapper.SysDictDataMapper">
+
+    <!--定义返回类型resultMap-->
+    <resultMap id="SysDictDataResultMap" type="com.sysdict.domain.entity.SysDictData">
+        <result column="dict_code" jdbcType="INTEGER" property="dictCode"/>
+        <result column="dict_sort" jdbcType="INTEGER" property="dictSort"/>
+        <result column="dict_label" jdbcType="VARCHAR" property="dictLabel"/>
+        <result column="dict_value" jdbcType="INTEGER" property="dictValue"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+
+    <sql id="SysData">
+        dict_code,dict_sort,dict_label,dict_value,remark
+    </sql>
+    <select id="getSysDictData" resultMap="SysDictDataResultMap">
+        select <include refid="SysData" />
+        from sys_dict_data
+        <where>
+            <if test="dict_code != null">
+                dict_code = #{dictCode}
+            </if>
+        </where>
+    </select>
+
+    <select id="getSysDictDataType" resultType="java.util.Map">
+        select dict_type, GROUP_CONCAT( concat(dict_label, ",", dict_code) order by dict_sort) as dict_data from sys_dict_data
+        group by dict_type
+        having dict_type in
+        <foreach collection="array" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+        </foreach>
+
+    </select>
+
+</mapper>

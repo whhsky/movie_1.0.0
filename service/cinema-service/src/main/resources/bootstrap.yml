@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: cinema-service
+  cloud:
+    nacos:
+      server-addr: 192.168.11.128:8848
+      discovery:
+        username: nacos
+        password: nacos
+        namespace: 2fe7d4fe-6a0e-4d91-9a4a-fa8caf9cb50b
+
+#    日志
+logging:
+  level:
+    cn.itcast: debug
+  pattern:
+    dateformat: MM-dd HH:mm:ss:SSS
+
+mybatis:
+  configuration:
+    #下划线转驼峰
+    map-underscore-to-camel-case: true
+    # 打印日志
+  #      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mybatis/mapper/**/*.xml

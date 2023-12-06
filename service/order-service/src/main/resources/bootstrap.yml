@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: order-service
+  cloud:
+    nacos:
+      server-addr: 192.168.11.128:8848
+      discovery:
+        username: nacos
+        password: nacos
+        namespace: 2fe7d4fe-6a0e-4d91-9a4a-fa8caf9cb50b
+

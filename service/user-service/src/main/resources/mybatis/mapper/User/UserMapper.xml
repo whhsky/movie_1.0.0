@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.user.mapper.UserMapper">
+    <select id="getUserByName" resultType="com.user.domain.entity.SysUser">
+        select id, user_name,password, sex, phone, e_mail, address, sign,icon from sys_user
+        where user_name = #{userName}
+    </select>
+
+    <select id="getUserByEMail" resultType="com.user.domain.entity.SysUser">
+        select id, user_name,password, sex, phone, e_mail, address, sign,icon from sys_user
+        where e_mail = #{eMail}
+    </select>
+
+    <insert id="userRegister">
+        insert into sys_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            user_name,password,create_time,update_time,
+            <if test="sex != null">
+                sex,
+            </if>
+            <if test="eMail != null">
+                e_mail,
+            </if>
+            <if test="address != null">
+                address,
+            </if>
+            <if test="sign != null">
+                sign,
+            </if>
+            <if test="icon != null">
+                icon,
+            </if>
+        </trim>
+        <trim prefix="values(" suffix=")" suffixOverrides=",">
+            #{userName}, #{password},#{createTime},#{updateTime},
+            <if test="sex != null">
+                #{sex},
+            </if>
+            <if test="eMail != null">
+                #{eMail},
+            </if>
+            <if test="address != null">
+                #{address},
+            </if>
+            <if test="sign != null">
+                #{sign},
+            </if>
+            <if test="icon != null">
+                #{icon}
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateSysUser">
+        update sys_user set
+        <trim suffixOverrides=",">
+            <if test="sex != null">
+                sex = #{sex},
+            </if>
+            <if test="eMail != null">
+                e_mail = #{eMail},
+            </if>
+            <if test="address != null">
+                address = #{address},
+            </if>
+            <if test="sign != null">
+                sign = #{sign},
+            </if>
+            <if test="icon != null">
+                icon = #{icon},
+            </if>
+            update_time = #{updateTime}
+        </trim>
+        where id = #{id}
+    </update>
+
+    <!-- 用户收藏的电影   -->
+    <select id="userCollectMovie" resultType="com.movie.domain.entity.Movies">
+        select m.id id, m.movie_name movie_name, m.movie_description movie_description, m.movie_poster movie_poster, f.create_time create_time
+        from favorite f inner join movies m
+        where f.user_id = #{userId} and f.movie_id = m.id
+    </select>
+
+    <sql id="commentsC">
+        c.comment_type,c.content,c.create_time,c.movie_id,c.score,c.update_time,c.support,c.reply_id
+    </sql>
+    <!-- 用户评论电影   -->
+    <select id="userCommentMovie" resultType="com.movie.domain.vo.CommentDetailVo">
+    select <include refid="commentsC"/>, m.movie_name, m.movie_description, m.movie_description, m.movie_poster
+    from comment c inner join movies m
+    where user_id = #{userId} and c.movie_id = m.id
+    </select>
+
+    <select id="selectsetUserOverage" resultType="java.lang.Double">
+        select overage from sys_user
+        where id = #{id}
+    </select>
+
+    <update id="setUserOverage">
+        update sys_user set overage = #{overage} where id = #{id}
+    </update>
+</mapper>

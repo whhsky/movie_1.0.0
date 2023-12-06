@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.movie.movie.mapper.MovieMapper">
+    <!--图片resultMap-->
+    <resultMap id="MovieImagesResultMap" type="com.movie.domain.entity.MovieImages">
+        <result column="movie_id" jdbcType="VARCHAR" property="movieId"/>
+        <result column="image" jdbcType="VARCHAR" property="image"/>
+        <result column="rotation_chart" jdbcType="INTEGER" property="rotationChart"/>
+    </resultMap>
+    <!-- 电影resultMap   -->
+    <resultMap id="MovieResultMap" type="com.movie.domain.entity.Movies">
+        <result column="id" jdbcType="INTEGER" property="id"/>
+        <result column="movie_name" jdbcType="VARCHAR" property="movieName"/>
+        <result column="movie_score" jdbcType="DOUBLE" property="movieScore"/>
+        <result column="movie_poster" jdbcType="VARCHAR" property="moviePoster"/>
+        <result column="movie_type" jdbcType="INTEGER" property="movieType"/>
+        <result column="movie_region" jdbcType="INTEGER" property="movieRegion"/>
+        <result column="movie_duration" jdbcType="INTEGER" property="movieDuration"/>
+        <result column="movie_release_date" jdbcType="TIMESTAMP" property="movieReleaseDate"/>
+        <result column="movie_era" jdbcType="INTEGER" property="movieEra"/>
+        <result column="movie_description" jdbcType="VARCHAR" property="movieDescription"/>
+        <result column="movie_score_num" jdbcType="INTEGER" property="movieScoreNum"/>
+        <result column="movie_box_office" jdbcType="DECIMAL" property="movieBoxOffice"/>
+        <result column="movie_anticipate" jdbcType="INTEGER" property="movieAnticipate"/>
+        <result column="movie_status" jdbcType="INTEGER" property="movieStatus"/>
+    </resultMap>
+
+    <sql id="movies">
+        id,
+        movie_name,
+        movie_score,
+        movie_poster,
+        movie_type,
+        movie_region,
+        movie_duration,
+        movie_release_date,
+        movie_era,
+        movie_description,
+        movie_score_num,
+        movie_box_office,
+        movie_anticipate,
+        movie_status
+    </sql>
+
+    <sql id="moviesM">
+        m.id,
+        m.movie_name,
+        m.movie_score,
+        m.movie_poster,
+        m.movie_type,
+        m.movie_region,
+        m.movie_duration,
+        m.movie_release_date,
+        m.movie_era,
+        m.movie_description,
+        m.movie_score_num,
+        m.movie_box_office,
+        m.movie_anticipate,
+        m.movie_status
+    </sql>
+
+    <select id="getMovieBannerImage" resultMap="MovieImagesResultMap">
+        select movie_id, image,rotation_chart
+        from movie_images
+        where rotation_chart = #{bannerCode}
+    </select>
+
+    <select id="movieList" resultType="com.movie.domain.vo.MoviesDetailVo">
+        select <include refid="moviesM" />, GROUP_CONCAT(c.cast_name) starring
+        from movies m left join cast c
+        on m.id = c.movie_id
+        <where>
+            <if test="keyWord != null and keyWord != ''">
+                and m.movie_name like concat("%",#{keyWord},"%")
+            </if>
+            <if test="movieType != null">
+                and m.movie_type = #{movieType}
+            </if>
+            <if test="movieRegion != null">
+                and m.movie_region = #{movieRegion}
+            </if>
+            <if test="movieEra != null">
+                and m.movie_era = #{movieEra}
+            </if>
+            <if test="movieStatus != null">
+                and m.movie_status = #{movieStatus}
+            </if>
+        </where>
+        group by m.id
+    </select>
+
+    <select id="top100" resultType="com.movie.domain.vo.MoviesDetailVo">
+        select <include refid="moviesM"/>, GROUP_CONCAT(c.cast_name) starring
+        from (
+        select <include refid="movies"/>
+        from movies
+        where movie_status = 80 or movie_status = 82 limit 100) m
+        left join cast c
+        on m.id = c.movie_id
+        group by m.id
+    </select>
+
+    <select id="getMovieDetailById" resultType="com.movie.domain.vo.MoviesDetailVo">
+        select m.<include refid="movies" />, GROUP_CONCAT(concat(s.dict_type, ':' , s.dict_label)) as dict_labels
+        from movies m inner join sys_dict_data s
+        on m.id = #{id} and(
+                     s.dict_code = m.movie_era or
+                     s.dict_code = m.movie_region or
+                     s.dict_code = m.movie_type or
+                     s.dict_code = m.movie_status)
+    </select>
+
+    <select id="getMovieImages" resultMap="MovieImagesResultMap">
+        select movie_id, image,rotation_chart
+        from movie_images
+        where movie_id = #{movieId}
+    </select>
+
+    <insert id="createMovieFavorite">
+        insert into favorite(movie_id, user_id, create_time) values (#{movieId}, #{userId}, #{createTime})
+    </insert>
+    
+    <select id="getMovieFavorite" resultType="com.movie.domain.entity.Favorite">
+        select movie_id, create_time from favorite
+        <where>
+            user_id = #{userId}
+            <if test="movieId != null">and movie_id = #{movieId}</if>
+        </where>
+    </select>
+
+    <delete id="delMovieFavorite">
+        delete from favorite where user_id =#{userId} and movie_id = #{movieId}
+    </delete>
+
+    <delete id="delMovieComment">
+        delete from comment where user_id =#{userId} and movie_id = #{movieId}
+    </delete>
+
+    <select id="hotList" resultType="com.movie.domain.entity.News">
+        select news_img,news_content,news_title,news_tags,news_view, create_time
+        from news
+        <where>
+            <if test="keyWord != null and keyWord !=''">
+                news_title like concat("%",#{keyWord},"%")
+            </if>
+        </where>
+    </select>
+
+    <select id="videoCallMovies" resultType="com.movie.domain.vo.MoviesDetailVo">
+        select m.<include refid="movies" />, s.dict_label as type_label
+        from movies m inner join movies_cinema mc
+        on mc.cinema_id = #{cinemaId} and m.id = mc.movie_id
+        inner join sys_dict_data s
+        on s.dict_code = m.movie_type
+        group by m.id
+    </select>
+
+    <!-- 用户收藏的电影   -->
+    <select id="userCollectMovie" resultType="com.movie.domain.entity.Movies">
+        select m.id id, m.movie_name movie_name, m.movie_description movie_description, m.movie_poster movie_poster, f.create_time create_time
+        from favorite f inner join movies m
+        where f.user_id = #{userId} and f.movie_id = m.id
+    </select>
+
+
+</mapper>

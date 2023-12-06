@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.movie.movie.mapper.CommentMapper">
+    <sql id="comments">
+        movie_id
+--         comment_type,content,create_time,movie_id,score,update_time,support,reply_id
+    </sql>
+
+    <sql id="commentsC">
+        c.comment_type,c.content,c.create_time,c.movie_id,c.score,c.update_time,c.support,c.reply_id
+    </sql>
+
+    <select id="ifGetMovieComment" resultType="com.movie.domain.entity.Comment">
+        select <include refid="comments"/>
+        from comment
+        where movie_id = #{movieId} and user_id = #{userId} and reply_id= #{replyId}
+    </select>
+
+    <select id="getMovieComment" resultType="com.movie.domain.vo.CommentDetailVo">
+        select <include refid="commentsC"/>, s.user_name,s.icon as user_icon
+        from comment c INNER JOIN sys_user s
+        <where>
+            c.movie_id = #{movieId} and c.user_id = s.id
+        </where>
+    </select>
+
+    <insert id="createComment">
+        insert into comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            comment_type,content,create_time,movie_id,score,update_time,user_id,
+            <if test="replyId != null">
+                reply_id
+            </if>
+
+        </trim>
+        <trim prefix="values(" suffix=")" suffixOverrides=",">
+            #{commentType},#{content},#{createTime},#{movieId},#{score},#{updateTime},#{userId},
+            <if test="replyId != null">
+                #{replyId},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 用户评论电影   -->
+    <select id="userCommentMovie" resultType="com.movie.domain.vo.CommentDetailVo">
+        select <include refid="commentsC"/>, m.movie_name, m.movie_description, m.movie_description, m.movie_poster
+        from comment c inner join movies m
+        where user_id = #{userId} and c.movie_id = m.id
+    </select>
+</mapper>

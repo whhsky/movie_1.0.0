@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.movie.cinema.mapper.CinemaMapper">
+    <sql id="cinemaS">
+        id,cinema_address, cinema_name, cinema_reg, cinema_type, cinema_avg_price, cinema_image, cinema_zkk, cinema_jl, cinema_service,cinema_phone
+    </sql>
+
+    <select id="cinemaList" resultType="com.cinema.domain.vo.CinemaTagsVo">
+        select c.<include refid="cinemaS" />
+        from cinema c inner join movies_cinema mc
+        <where>
+
+            <if test="keyWord != null and keyWord != ''">
+                and c.cinema_name like concat("%",#{keyWord},"%")
+            </if>
+            <if test="cinemaBrand != null">
+                and c.cinema_brand = #{cinemaBrand}
+            </if>
+            <if test="cinemaReg != null">
+                and c.cinema_reg = #{cinemaReg}
+            </if>
+            <if test="cinemaType != null">
+                and c.cinema_type like concat("%",#{cinemaType},"%")
+            </if>
+            <if test="cinemaService != null">
+                and c.cinema_service = #{cinemaService}
+            </if>
+            <if test="id != null">
+                c.id = #{id}
+            </if>
+            <if test="movieId != null and id == null">
+                and mc.movie_id = #{movieId} and c.id = mc.cinema_id
+            </if>
+        </where>
+        group by c.id
+    </select>
+
+    <select id="cinemaTags" resultType="java.lang.String">
+        select GROUP_CONCAT(dict_label) as cinema_tags
+        from sys_dict_data
+        where dict_code in
+        <foreach collection="array" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <sql id="callVideo">
+        id,movie_id,cinema_id,language_version,video_call_id,video_type,movie_price,view_start_time,view_end_time
+    </sql>
+    <select id="videoCall" resultType="com.cinema.domain.entity.CinemaAndMovies">
+        select <include refid="callVideo"/>
+        from movies_cinema
+        where movie_id = #{movieId} and cinema_id = #{cinemaId}
+        order by view_start_time
+    </select>
+
+    <resultMap id="videoViewMap" type="com.cinema.domain.vo.CinemaAndMoviesDetail">
+        <result column="id" property="id" />
+        <result column="movie_id" property="movieId" />
+        <result column="cinema_id" property="cinemaId" />
+        <result column="language_version" property="languageVersion" />
+        <result column="video_call_id" property="videoCallId" />
+        <result column="video_type" property="videoType" />
+        <result column="movie_price" property="moviePrice" />
+        <result column="view_start_time" property="viewStartTime" />
+        <result column="view_end_time" property="viewEndTime" />
+        <result column="view_end_time" property="viewEndTime" />
+        <result column="video_row" property="videoRow" />
+        <result column="video_column" property="videoColumn" />
+        <association property="CinemaInfo" javaType="com.cinema.domain.entity.Cinema">
+            <result column="cinema_name" jdbcType="VARCHAR" property="cinemaName" />
+            <result column="cinema_address" jdbcType="VARCHAR" property="cinemaAddress" />
+            <result column="cinema_phone" jdbcType="VARCHAR" property="cinemaPhone" />
+            <result column="cinema_image" jdbcType="VARCHAR" property="cinemaImage" />
+            <result column="cinema_service" jdbcType="INTEGER" property="cinemaService" />
+            <result column="cinema_zkk" jdbcType="INTEGER" property="cinemaZkk" />
+            <result column="cinema_jl" jdbcType="DECIMAL" property="cinemaJl" />
+        </association>
+    </resultMap>
+
+    <sql id="callVideoMC">
+        mc.id,mc.movie_id,mc.cinema_id,mc.language_version,mc.video_call_id,mc.video_type,mc.movie_price,mc.view_start_time,mc.view_end_time
+    </sql>
+
+<!--    <select id="videoView" resultType="com.cinema.domain.vo.CinemaAndMoviesDetail">-->
+    <select id="videoView" resultMap="videoViewMap">
+        select <include refid="callVideoMC"/>,
+        v.video_row , v.video_column,
+        c.cinema_name,c.cinema_address,c.cinema_phone,c.cinema_image,c.cinema_service,c.cinema_zkk,c.cinema_jl
+        from movies_cinema mc inner join video_call v inner join cinema `c`
+        on mc.video_call_id = v.video_call_id and mc.cinema_id = v.cinema_id and mc.cinema_id = c.id
+        where mc.id = #{viewId}
+    </select>
+
+
+    <select id="getSeatDetail" resultType="com.cinema.domain.entity.Seat">
+        select seat_row,seat_column,seat_status
+        from seat
+        where video_call_id = #{videoCallId} and cinema_id = #{cinemaId} and seat_status = #{seatStatus} and mc_id = #{mcId}
+    </select>
+
+    <!--  创建订单时用  -->
+    <select id="SeatDetail2" resultType="com.cinema.domain.entity.Seat">
+        select seat_row,seat_column,seat_status
+        from seat
+        where seat_row = #{seatRow} and seat_column = #{seatColumn} and cinema_id = #{cinemaId} and video_call_id = #{videoCallId} and mc_id = #{mcId}
+    </select>
+
+    <sql id="createSeatId">
+        seat_row, seat_column, seat_status, cinema_id, video_call_id, user_id, mc_id, create_time, update_time
+    </sql>
+
+    <insert id="createSeat" useGeneratedKeys="true" keyProperty="id">
+        insert into seat(<include refid="createSeatId"/>)
+        values(#{seatRow}, #{seatColumn}, #{seatStatus}, #{cinemaId}, #{videoCallId}, #{userId}, #{mcId}, #{createTime}, #{updateTime})
+    </insert>
+
+    <delete id="deleteSeats">
+        delete from seat
+        where id = #{id}
+    </delete>
+
+</mapper>
