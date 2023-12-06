@@ -1,0 +1,6 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.movie.secutity.securityConfig.SecurityConfig,\
+  com.movie.secutity.handler.MyAccessDeniedHandler,\
+  com.movie.secutity.handler.ResourceErrorConf,\
+  com.movie.secutity.filter.JWTAuthenticationFilter,\
+  com.movie.utils.RedisUtils
